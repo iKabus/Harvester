@@ -11,7 +11,7 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     [SerializeField] protected int _poolCapacity = 3;
     [SerializeField] protected int _poolMaxSize = 3;
 
-    protected Coroutine _coroutine;
+    private Coroutine _coroutine;
     protected ObjectPool<T> _pool;
 
     protected virtual void Awake()
@@ -39,7 +39,7 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
-    protected virtual IEnumerator SpawnCooldown()
+    protected IEnumerator SpawnCooldown()
     {
         var wait = new WaitForSeconds(_repeatRate);
 
@@ -62,7 +62,7 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
-    protected virtual Vector3? TryGetPosition()
+    protected Vector3? TryGetPosition()
     {
         var freePoints = _spawnPoints.Where(point => point.IsFree).ToArray();
     
