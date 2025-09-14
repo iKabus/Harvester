@@ -7,42 +7,37 @@ public class Scanner : MonoBehaviour
     [SerializeField] private float _radius = 40f;
     [SerializeField] private float _interval = 3f;
 
-    private Dictionary<Resource, bool> _resources = new();
-    private HashSet<Unit> _units = new();
+    private readonly Dictionary<Resource, bool> _resources = new();
+    private readonly HashSet<Unit> _units = new();
 
-    private Coroutine _scaning;
+    private Coroutine _scanning;
 
     private void Start()
     {
-        _scaning = StartCoroutine(Scaning());
+        _scanning = StartCoroutine(Scanning());
     }
 
     private void OnDestroy()
     {
-        if (_scaning != null)
+        if (_scanning != null)
         {
-            StopCoroutine(_scaning);
-        }
-        
-        foreach (var resource in _resources.Keys)
-        {
-            if (resource != null)
-            {
-                resource.TriggeredBaseEnter -= ResourceOnBase;
-            }
+            StopCoroutine(_scanning);
+            _scanning = null;
         }
     }
-
+    
     public Resource GetResource()
     {
         CleanDictionary();
 
-        foreach (var (resource, isAssigned) in _resources)
+        foreach (var kv in _resources)
         {
-            if (resource != null && isAssigned == false)
+            var resource = kv.Key;
+            var isAssigned = kv.Value;
+
+            if (resource != null && resource.gameObject.activeInHierarchy && isAssigned == false)
             {
                 _resources[resource] = true;
-
                 return resource;
             }
         }
@@ -53,61 +48,51 @@ public class Scanner : MonoBehaviour
     public IReadOnlyCollection<Unit> GetUnits()
     {
         CleanUnitsList();
-
         return _units;
     }
 
-    private void ResourceOnBase(Resource resource)
-    {
-        if (_resources.ContainsKey(resource))
-        {
-            resource.TriggeredBaseEnter -= ResourceOnBase;
-            
-            _resources.Remove(resource);
-        }
-    }
-
-    private IEnumerator Scaning()
+    private IEnumerator Scanning()
     {
         var wait = new WaitForSeconds(_interval);
 
         while (enabled)
         {
             yield return wait;
-
             ScanForObjects();
         }
     }
-    
+
     private void ScanForObjects()
     {
         Collider[] colliders = Physics.OverlapSphere(transform.position, _radius);
+
+        var presentResources = ProcessCollidersForResources(colliders);
         
-        ProcessCollidersForResources(colliders);
         ProcessCollidersForUnits(colliders);
-        
+
+        PruneResourcesNotPresent(presentResources);
+
         CleanDictionary();
     }
-
-    private void ProcessCollidersForResources(Collider[] colliders)
+    
+    private HashSet<Resource> ProcessCollidersForResources(Collider[] colliders)
     {
+        var present = new HashSet<Resource>();
+
         foreach (var collider in colliders)
         {
             if (collider.TryGetComponent(out Resource resource))
-                AddResource(resource);
-        }
-    }
-    
-    private void AddResource(Resource resource)
-    {
-        if (_resources.ContainsKey(resource))
-        {
-            return;
+            {
+                present.Add(resource);
+
+                if (!_resources.ContainsKey(resource))
+                {
+                    _resources.Add(resource, false);
+                }
+            }
         }
 
-        _resources.Add(resource, false);
-        
-        resource.TriggeredBaseEnter += ResourceOnBase;
+        return present;
     }
 
     private void ProcessCollidersForUnits(Collider[] colliders)
@@ -122,30 +107,64 @@ public class Scanner : MonoBehaviour
             }
         }
     }
-
-    private void CleanDictionary()
+    
+    private void PruneResourcesNotPresent(HashSet<Resource> present)
     {
-        List<Resource> resourcesToRemove = new List<Resource>();
+        if (_resources.Count == 0) return;
 
-        foreach (var resource in _resources)
+        var toRemove = new List<Resource>();
+
+        foreach (var resource in _resources.Keys)
         {
-            if (resource.Key == null)
+            if (resource == null)
             {
-                resourcesToRemove.Add(resource.Key);
+                toRemove.Add(resource);
+                continue;
+            }
+
+            if (!resource.gameObject.activeInHierarchy)
+            {
+                toRemove.Add(resource);
+                continue;
+            }
+
+            if (!present.Contains(resource))
+            {
+                toRemove.Add(resource);
             }
         }
 
-        foreach (var resource in resourcesToRemove)
+        foreach (var r in toRemove)
         {
-            resource.TriggeredBaseEnter -= ResourceOnBase;
+            _resources.Remove(r);
+        }
+    }
+    
+    private void CleanDictionary()
+    {
+        if (_resources.Count == 0) return;
 
-            _resources.Remove(resource);
+        var toRemove = new List<Resource>();
+
+        foreach (var kv in _resources)
+        {
+            var resource = kv.Key;
+            
+            if (resource == null || !resource.gameObject.activeInHierarchy)
+            {
+                toRemove.Add(resource);
+            }
+        }
+
+        foreach (var r in toRemove)
+        {
+            _resources.Remove(r);
         }
     }
 
     private void CleanUnitsList()
     {
-        _units.RemoveWhere(unit => unit == null);
+        _units.RemoveWhere(unit => unit == null || !unit.gameObject.activeInHierarchy);
     }
 
     private void OnDrawGizmos()

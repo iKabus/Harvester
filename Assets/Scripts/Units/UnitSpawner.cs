@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class UnitSpawner : Spawner<Unit>
 {
-    private int _maxCount = 5;
+    [SerializeField] private int _maxCount = 5;
     
     protected override void InitializeItem(Unit unit, Vector3 position)
     {
@@ -10,12 +10,14 @@ public class UnitSpawner : Spawner<Unit>
         SetupItemEvents(unit);
     }
 
-    protected override void TrySpawn()
+    protected override bool TrySpawn()
     {
-        if (_pool.CountActive >= _maxCount)
-            return;
-
-        base.TrySpawn();
+        if (ActiveCount >= _maxCount)
+        {
+            return false;
+        }
+        
+        return base.TrySpawn();
     }
 
     protected override void SetupItemEvents(Unit unit)
