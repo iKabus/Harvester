@@ -131,7 +131,7 @@ MonoBehaviour:
   _collectionRange: 2
   _collectionTime: 1
   _baseArrivalDistance: 0.15
-  _carryLocalOffset: {x: 0, y: 0.5, z: 0.2}
+  _carryLocalOffset: {x: 0, y: 1.5, z: 0}
 --- !u!54 &-4315565998819366423
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -5,10 +5,10 @@ using UnityEngine;
 public class Unit : MonoBehaviour
 {
     [SerializeField] private float _moveSpeed = 3f;
-    [SerializeField] private float _collectionRange = 3f;
+    [SerializeField] private float _collectionRange = 2f;
     [SerializeField] private float _collectionTime = 1f;
     [SerializeField] private float _baseArrivalDistance = 0.15f;
-    [SerializeField] private Vector3 _carryLocalOffset = new Vector3(0f, 0.5f, 0.2f);
+    [SerializeField] private Vector3 _carryLocalOffset = new Vector3(0f, 0f, 0f);
 
     private Resource _targetResource;
     private Transform _resourceTransform;
@@ -52,7 +52,6 @@ public class Unit : MonoBehaviour
     {
         ChangeState(UnitState.MoveToResource);
 
-        // 1) идти к ресурсу с таймаутом
         yield return StartCoroutine(MoveToDynamicTarget(
             () => _resourceTransform != null ? _resourceTransform.position : transform.position,
             _collectionRange,
@@ -62,11 +61,10 @@ public class Unit : MonoBehaviour
 
         if (_resourceTransform == null)
         {
-            yield return StartCoroutine(ReturnHomeRoutine()); // уже вернёт в idle
+            yield return StartCoroutine(ReturnHomeRoutine());
             yield break;
         }
 
-        // 2) сбор
         ChangeState(UnitState.Collecting);
         float timer = 0f;
         while (timer < _collectionTime)
@@ -98,11 +96,10 @@ public class Unit : MonoBehaviour
 
         PickupResource();
 
-        // 3) возврат к базе/дому
         ChangeState(UnitState.ReturningToBase);
 
-        // Если база пропадёт — НЕ дропать в поле, а вернуться домой и там дропнуть.
         bool baseMissing = false;
+        
         yield return StartCoroutine(MoveToDynamicTarget(
             () => _baseTransform != null ? _baseTransform.position : _startPosition,
             _baseArrivalDistance,
@@ -115,17 +112,14 @@ public class Unit : MonoBehaviour
 
         if (baseMissing)
         {
-            // База пропала: дойдём до дома и дропнем там
             yield return StartCoroutine(MoveToStaticTargetSafe(_startPosition, _baseArrivalDistance));
-            DropResourceAtBase(); // или DropResourceAtHome()
+            DropResourceAtBase();
             ReturnToIdleState();
-            yield break;
         }
         else
         {
             DropResourceAtBase();
-            yield return StartCoroutine(ReturnHomeRoutine()); // этот метод сам вернёт в idle
-            yield break;
+            yield return StartCoroutine(ReturnHomeRoutine());
         }
     }
 
@@ -133,18 +127,15 @@ public class Unit : MonoBehaviour
     {
         if (_resourceTransform == null) return;
 
-        // Обычно при переноске удобнее worldPositionStays:false
         _resourceTransform.SetParent(transform, worldPositionStays: false);
         _resourceTransform.localPosition = _carryLocalOffset;
 
         if (_resourceTransform.TryGetComponent<Rigidbody>(out var rb))
         {
             rb.isKinematic = true;
-            // На время переноса лучше отключить коллизии
             rb.detectCollisions = false;
         }
 
-        // Если есть коллайдер — можно сделать isTrigger = true
         if (_resourceTransform.TryGetComponent<Collider>(out var col))
             col.isTrigger = true;
     }
@@ -158,21 +149,18 @@ public class Unit : MonoBehaviour
         if (_resourceTransform.TryGetComponent<Rigidbody>(out var rb))
         {
             rb.isKinematic = false;
-            rb.detectCollisions = true; // вернуть обратно
+            rb.detectCollisions = true;
         }
 
         if (_resourceTransform.TryGetComponent<Collider>(out var col))
             col.isTrigger = false;
-
-        // TODO: здесь уведомить базу о доставке/инкременте ресурсов
-        // targetBase.AddResource(_targetResource);
     }
 
     private IEnumerator ReturnHomeRoutine()
     {
         ChangeState(UnitState.ReturningToBase);
         yield return StartCoroutine(MoveToStaticTargetSafe(_startPosition, _baseArrivalDistance));
-        ReturnToIdleState(); // <-- единственная точка перехода в idle
+        ReturnToIdleState();
     }
 
     private IEnumerator MoveToDynamicTarget(Func<Vector3> targetPositionFunc, float stopDistance,
@@ -183,7 +171,7 @@ public class Unit : MonoBehaviour
 
         while (true)
         {
-            if (!enabled) yield break; // унификация поведения
+            if (!enabled) yield break;
 
             if (cancelCondition != null && cancelCondition())
                 yield break;
@@ -192,7 +180,6 @@ public class Unit : MonoBehaviour
             if ((transform.position - targetPosition).sqrMagnitude <= stopSqr)
                 yield break;
 
-            // Если есть Rigidbody у юнита — используйте MovePosition
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, _moveSpeed * Time.deltaTime);
 
             if ((t += Time.deltaTime) >= hardTimeoutSec)
@@ -237,7 +224,6 @@ public class Unit : MonoBehaviour
     {
         if (_currentState == newState) return;
         _currentState = newState;
-        // TODO: OnStateChanged?.Invoke(newState);
     }
 
     private void OnDrawGizmos()
