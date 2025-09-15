@@ -21,9 +21,7 @@ public class ResourceSpawner : Spawner<Resource>
         if (resource == null) return;
 
         if (!resource.gameObject.activeInHierarchy)
-        {
             return;
-        }
 
         EnableCollider(resource, false);
 
@@ -54,7 +52,7 @@ public class ResourceSpawner : Spawner<Resource>
         {
             rb.isKinematic = false;
             rb.detectCollisions = true;
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
     }

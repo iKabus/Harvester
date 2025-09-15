@@ -685,7 +685,7 @@ MonoBehaviour:
   _poolCapacity: 3
   _poolMaxSize: 3
   _collectionCheck: 1
-  _maxCount: 5
+  _maxCount: 3
 --- !u!4 &797297846
 Transform:
   m_ObjectHideFlags: 0

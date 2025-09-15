@@ -127,8 +127,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14f9675a03da11e469cabec25d04f32b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
-  _moveSpeed: 3
-  _collectionRange: 3
+  _moveSpeed: 7
+  _collectionRange: 2
   _collectionTime: 1
   _baseArrivalDistance: 0.15
   _carryLocalOffset: {x: 0, y: 0.5, z: 0.2}
