@@ -156,13 +156,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
   _moveSpeed: 7
-  _collectionRange: 2
-  _collectionTime: 1
-  _baseArrivalDistance: 2
-  _carryLocalOffset: {x: 0, y: 1.5, z: 0}
   _retargetInterval: 0.15
   _moveTimeoutToResource: 10
   _moveTimeoutToBase: 15
+  _baseArrivalDistance: 2
+  _collectionRange: 2
+  _collectionTime: 1
+  _carryLocalOffset: {x: 0, y: 1.5, z: 0}
 --- !u!195 &-2733634712675442626
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -172,7 +172,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 3351827498485491594}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 1
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50

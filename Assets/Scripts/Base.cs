@@ -43,6 +43,8 @@ public class Base : MonoBehaviour
 
     private void TryAssignTasks()
     {
+        int assigned = 0;
+        
         if (_scanner == null) return;
 
         IReadOnlyCollection<Unit> allUnits = _scanner.GetUnits();
@@ -53,14 +55,13 @@ public class Base : MonoBehaviour
             unit != null &&
             unit.isActiveAndEnabled &&
             !unit.IsBusy &&
-            (_allowFarUnits || Vector3.Distance(unit.transform.position, transform.position) <= _unitMaxDistanceFromBase)
+            (_allowFarUnits || Vector3.SqrMagnitude(unit.transform.position - transform.position) <= _unitMaxDistanceFromBase)
         );
 
         freeUnits = freeUnits
             .OrderBy(unit => Vector3.SqrMagnitude(unit.transform.position - transform.position));
 
-        int assigned = 0;
-
+        
         foreach (var unit in freeUnits)
         {
             if (assigned >= _maxAssignmentsPerTick)
