@@ -19,10 +19,12 @@ public sealed class ResourceReturnHook : MonoBehaviour
         if (_isReturned || _spawner == null || _resource == null)
             return;
         
-        if (_spawner != null && _resource != null && other.TryGetComponent<Base>(out _))
+        if (other.TryGetComponent<Base>(out var baseComponent))
         {
             _isReturned = true;
             _spawner.ReleaseFromBase(_resource);
+            
+            baseComponent.NotifyDelivered(_resource);
         }
     }
 }

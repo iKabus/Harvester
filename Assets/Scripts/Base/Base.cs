@@ -11,6 +11,8 @@ public class Base : MonoBehaviour
     [SerializeField] private int _maxAssignmentsPerTick = 3;
     [SerializeField] private bool _allowFarUnits = true;
     [SerializeField] private float _unitMaxDistanceFromBase = 60f;
+    
+    public event Action<Resource> ResourceDelivered; 
 
     private Coroutine _assignLoop;
 
@@ -27,6 +29,11 @@ public class Base : MonoBehaviour
             StopCoroutine(_assignLoop);
             _assignLoop = null;
         }
+    }
+
+    public void NotifyDelivered(Resource resource)
+    {
+        ResourceDelivered?.Invoke(resource);
     }
 
     private IEnumerator AssignLoop()
