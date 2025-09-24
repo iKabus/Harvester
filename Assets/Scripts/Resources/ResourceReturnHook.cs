@@ -24,7 +24,7 @@ public sealed class ResourceReturnHook : MonoBehaviour
             _isReturned = true;
             _spawner.ReleaseFromBase(_resource);
             
-            baseComponent.NotifyDelivered(_resource);
+            baseComponent.NotifyDelivered();
         }
     }
 }

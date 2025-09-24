@@ -7,21 +7,10 @@ public class ResourceCounterUI : MonoBehaviour
     [SerializeField] private Base _targetBase;
     [SerializeField] private TextMeshProUGUI _resourceCounter;
     [SerializeField] private string labelPrefix =  "";
-    [SerializeField] private int _startValue = 0;
     [SerializeField] private bool _billboardToCamera = true;
-
-    private int _count;
-
-    private void Reset()
-    {
-        if(_targetBase == null)
-            _targetBase = GetComponentInParent<Base>();
-    }
-
+    
     private void OnEnable()
     {
-        _count  = _startValue;
-        
         UpdateText();
 
         if (_targetBase != null)
@@ -47,10 +36,8 @@ public class ResourceCounterUI : MonoBehaviour
         }
     }
 
-    private void HandleDelivered(Resource resource)
+    private void HandleDelivered()
     {
-        _count++;
-
         UpdateText();
     }
 
@@ -58,7 +45,7 @@ public class ResourceCounterUI : MonoBehaviour
     {
         if (_resourceCounter != null)
         {
-            _resourceCounter.text = $"{labelPrefix}{_count}";
+            _resourceCounter.text = $"{labelPrefix}{_targetBase.ResourceCount}";
         }
     }
 }

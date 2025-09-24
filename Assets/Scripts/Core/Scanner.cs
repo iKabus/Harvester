@@ -14,6 +14,11 @@ public class Scanner : MonoBehaviour
 
     private void Start()
     {
+        if (_scanning != null)
+        {
+            StopCoroutine(_scanning);
+        }
+        
         _scanning = StartCoroutine(Scanning());
     }
 
@@ -48,6 +53,7 @@ public class Scanner : MonoBehaviour
     public IReadOnlyCollection<Unit> GetUnits()
     {
         CleanUnitsList();
+        
         return _units;
     }
 
@@ -58,6 +64,7 @@ public class Scanner : MonoBehaviour
         while (enabled)
         {
             yield return wait;
+            
             ScanForObjects();
         }
     }
@@ -77,15 +84,15 @@ public class Scanner : MonoBehaviour
     
     private HashSet<Resource> ProcessCollidersForResources(Collider[] colliders)
     {
-        var present = new HashSet<Resource>();
+        HashSet<Resource> present = new HashSet<Resource>();
 
-        foreach (var collider in colliders)
+        foreach (Collider collider in colliders)
         {
             if (collider.TryGetComponent(out Resource resource))
             {
                 present.Add(resource);
 
-                if (!_resources.ContainsKey(resource))
+                if (_resources.ContainsKey(resource) == false)
                 {
                     _resources.Add(resource, false);
                 }
@@ -99,7 +106,7 @@ public class Scanner : MonoBehaviour
     {
         _units.Clear();
 
-        foreach (var collider in colliders)
+        foreach (Collider collider in colliders)
         {
             if (collider.TryGetComponent(out Unit unit))
             {
@@ -112,9 +119,9 @@ public class Scanner : MonoBehaviour
     {
         if (_resources.Count == 0) return;
 
-        var toRemove = new List<Resource>();
+        List<Resource> toRemove = new List<Resource>();
 
-        foreach (var resource in _resources.Keys)
+        foreach (Resource resource in _resources.Keys)
         {
             if (resource == null)
             {
@@ -122,21 +129,22 @@ public class Scanner : MonoBehaviour
                 continue;
             }
 
-            if (!resource.gameObject.activeInHierarchy)
+            if (resource.gameObject.activeInHierarchy == false)
             {
                 toRemove.Add(resource);
+                
                 continue;
             }
 
-            if (!present.Contains(resource))
+            if (present.Contains(resource) == false)
             {
                 toRemove.Add(resource);
             }
         }
 
-        foreach (var r in toRemove)
+        foreach (Resource resource in toRemove)
         {
-            _resources.Remove(r);
+            _resources.Remove(resource);
         }
     }
     
@@ -144,21 +152,21 @@ public class Scanner : MonoBehaviour
     {
         if (_resources.Count == 0) return;
 
-        var toRemove = new List<Resource>();
+        List<Resource> toRemove = new List<Resource>();
 
         foreach (var kv in _resources)
         {
-            var resource = kv.Key;
+            Resource resource = kv.Key;
             
-            if (resource == null || !resource.gameObject.activeInHierarchy)
+            if (resource == null || resource.gameObject.activeInHierarchy == false)
             {
                 toRemove.Add(resource);
             }
         }
 
-        foreach (var r in toRemove)
+        foreach (Resource resource in toRemove)
         {
-            _resources.Remove(r);
+            _resources.Remove(resource);
         }
     }
 

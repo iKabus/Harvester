@@ -12,8 +12,10 @@ public class Base : MonoBehaviour
     [SerializeField] private bool _allowFarUnits = true;
     [SerializeField] private float _unitMaxDistanceFromBase = 60f;
     
-    public event Action<Resource> ResourceDelivered; 
+    public event Action ResourceDelivered;
 
+    public int ResourceCount { private set; get; } = 0;
+    
     private Coroutine _assignLoop;
 
     private void OnEnable()
@@ -31,9 +33,11 @@ public class Base : MonoBehaviour
         }
     }
 
-    public void NotifyDelivered(Resource resource)
+    public void NotifyDelivered()
     {
-        ResourceDelivered?.Invoke(resource);
+        ResourceCount++;
+        
+        ResourceDelivered?.Invoke();
     }
 
     private IEnumerator AssignLoop()
