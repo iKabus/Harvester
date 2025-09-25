@@ -1,15 +1,15 @@
 {
     "version": 1,
-    "name": "InputSystem_Actions",
+    "name": "Controls",
     "maps": [
         {
             "name": "Camera",
-            "id": "8935b3db-14df-4039-bb02-e4f71880bb9f",
+            "id": "fdedbbc2-683a-44cf-aee6-3652bf866fee",
             "actions": [
                 {
                     "name": "Move",
                     "type": "Value",
-                    "id": "76b65630-43be-4556-ac29-5b1569d67fec",
+                    "id": "50482079-bc6e-4633-8b86-0a570c0e1222",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -18,7 +18,7 @@
                 {
                     "name": "Look",
                     "type": "Value",
-                    "id": "eed2cf9e-b1bc-4cfe-9565-ded1ce23144c",
+                    "id": "7d5f0838-6c26-485f-8e30-5bafef0dd3e6",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -27,7 +27,7 @@
                 {
                     "name": "RotateHold",
                     "type": "Button",
-                    "id": "9add12f3-6285-4f68-a725-52126af21a76",
+                    "id": "8d63fd27-de75-415d-8cb8-f3866e5d683c",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -36,19 +36,8 @@
             ],
             "bindings": [
                 {
-                    "name": "",
-                    "id": "e56c4384-ce7d-4e93-a772-574ae7255dc0",
-                    "path": "<Mouse>/delta",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": ";Keyboard&Mouse;Touch",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
                     "name": "2D Vector",
-                    "id": "c8798835-ce7f-403b-8f2a-5ccc07acd0e1",
+                    "id": "9080f2d0-abca-4c36-ac6a-813b2a6f344f",
                     "path": "2DVector",
                     "interactions": "",
                     "processors": "",
@@ -59,7 +48,7 @@
                 },
                 {
                     "name": "up",
-                    "id": "79a632ee-c9a5-4e61-88e7-d7fbcb92eb56",
+                    "id": "7cd079dd-23cd-413e-9f9b-68a49f824560",
                     "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
@@ -70,7 +59,7 @@
                 },
                 {
                     "name": "down",
-                    "id": "50365072-6ff9-4d33-9c6b-21b2130e997e",
+                    "id": "fa5f3f97-47b7-4d87-a695-e687bc8336d0",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
@@ -81,7 +70,7 @@
                 },
                 {
                     "name": "left",
-                    "id": "caa07994-5b06-4767-955e-f4214f6296ad",
+                    "id": "36f3df03-1ac5-449f-aa68-770bcbe23b4f",
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
@@ -92,7 +81,7 @@
                 },
                 {
                     "name": "right",
-                    "id": "0e94d9cc-b639-46ac-825f-d8b6b46bb49c",
+                    "id": "0d3732b3-13c1-42a6-baf6-c8052f147e39",
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
@@ -103,7 +92,18 @@
                 },
                 {
                     "name": "",
-                    "id": "e769a544-6fa4-41bc-87b1-2aab1b15aac8",
+                    "id": "be75298c-a2d7-420f-9683-03c59184a888",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2269d0ec-1954-4900-af58-44133e706784",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
@@ -115,66 +115,5 @@
             ]
         }
     ],
-    "controlSchemes": [
-        {
-            "name": "Keyboard&Mouse",
-            "bindingGroup": "Keyboard&Mouse",
-            "devices": [
-                {
-                    "devicePath": "<Keyboard>",
-                    "isOptional": false,
-                    "isOR": false
-                },
-                {
-                    "devicePath": "<Mouse>",
-                    "isOptional": false,
-                    "isOR": false
-                }
-            ]
-        },
-        {
-            "name": "Gamepad",
-            "bindingGroup": "Gamepad",
-            "devices": [
-                {
-                    "devicePath": "<Gamepad>",
-                    "isOptional": false,
-                    "isOR": false
-                }
-            ]
-        },
-        {
-            "name": "Touch",
-            "bindingGroup": "Touch",
-            "devices": [
-                {
-                    "devicePath": "<Touchscreen>",
-                    "isOptional": false,
-                    "isOR": false
-                }
-            ]
-        },
-        {
-            "name": "Joystick",
-            "bindingGroup": "Joystick",
-            "devices": [
-                {
-                    "devicePath": "<Joystick>",
-                    "isOptional": false,
-                    "isOR": false
-                }
-            ]
-        },
-        {
-            "name": "XR",
-            "bindingGroup": "XR",
-            "devices": [
-                {
-                    "devicePath": "<XRController>",
-                    "isOptional": false,
-                    "isOR": false
-                }
-            ]
-        }
-    ]
+    "controlSchemes": []
 }
