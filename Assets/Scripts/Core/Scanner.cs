@@ -27,6 +27,7 @@ public class Scanner : MonoBehaviour
         if (_scanning != null)
         {
             StopCoroutine(_scanning);
+            
             _scanning = null;
         }
     }
@@ -43,6 +44,7 @@ public class Scanner : MonoBehaviour
             if (resource != null && resource.gameObject.activeInHierarchy && isAssigned == false)
             {
                 _resources[resource] = true;
+                
                 return resource;
             }
         }
@@ -73,7 +75,7 @@ public class Scanner : MonoBehaviour
     {
         Collider[] colliders = Physics.OverlapSphere(transform.position, _radius);
 
-        var presentResources = ProcessCollidersForResources(colliders);
+        HashSet<Resource> presentResources = ProcessCollidersForResources(colliders);
         
         ProcessCollidersForUnits(colliders);
 
@@ -117,15 +119,16 @@ public class Scanner : MonoBehaviour
     
     private void PruneResourcesNotPresent(HashSet<Resource> present)
     {
-        if (_resources.Count == 0) return;
-
         List<Resource> toRemove = new List<Resource>();
+
+        if (_resources.Count == 0) return;
 
         foreach (Resource resource in _resources.Keys)
         {
             if (resource == null)
             {
                 toRemove.Add(resource);
+                
                 continue;
             }
 
@@ -150,9 +153,9 @@ public class Scanner : MonoBehaviour
     
     private void CleanDictionary()
     {
-        if (_resources.Count == 0) return;
-
         List<Resource> toRemove = new List<Resource>();
+
+        if (_resources.Count == 0) return;
 
         foreach (var kv in _resources)
         {

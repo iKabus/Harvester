@@ -4,12 +4,12 @@ public abstract class SpawnPoint : MonoBehaviour
 {
     public bool IsFree { get; protected set; } = true;
     
-    protected virtual void HandleTriggerEnter(Collider other)
+    private void HandleTriggerEnter(Collider other)
     {
         IsFree = false;
     }
     
-    protected virtual void HandleTriggerExit(Collider other)
+    private void HandleTriggerExit(Collider other)
     {
         IsFree = true;
     }

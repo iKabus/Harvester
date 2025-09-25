@@ -78,7 +78,7 @@ public class Base : MonoBehaviour
             if (assigned >= _maxAssignmentsPerTick)
                 break;
 
-            var resource = _scanner.GetResource();
+            Resource resource = _scanner.GetResource();
             
             if (resource == null || !resource.gameObject.activeInHierarchy)
                 break;

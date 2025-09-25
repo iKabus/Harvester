@@ -20,7 +20,6 @@ public class Unit : MonoBehaviour
     private Vector3 _home;
     private bool _initialized;
 
-    private Resource _targetResource;
     private Transform _resourceT;
     private Transform _baseT;
 
@@ -52,7 +51,7 @@ public class Unit : MonoBehaviour
         
         if (_agent == null) _agent = GetComponent<NavMeshAgent>();
 
-        transform.position = TrySnapToNavMesh(position, maxDistance, out var snapped) ? snapped : position;
+        transform.position = TrySnapToNavMesh(position, maxDistance, out Vector3 snapped) ? snapped : position;
 
         _agent.speed = _moveSpeed;
         _agent.acceleration = _moveSpeed;
@@ -72,7 +71,6 @@ public class Unit : MonoBehaviour
     {
         if (resource == null || targetBase == null || IsBusy) return false;
 
-        _targetResource = resource;
         _resourceT = resource.transform;
         _baseT = targetBase.transform;
 
@@ -120,16 +118,16 @@ public class Unit : MonoBehaviour
         
         while (time < _collectionTime)
         {
+            float extra = 1.25f;
+            
+            float limitSqr = _collectionRange * _collectionRange * extra * extra;
+            
             if (_resourceT == null)
             {
                 yield return ReturnHome();
                 
                 yield break;
             }
-
-            float extra = 1.25f;
-            
-            float limitSqr = _collectionRange * _collectionRange * extra * extra;
             
             if ((transform.position - _resourceT.position).sqrMagnitude > limitSqr)
             {
@@ -233,7 +231,7 @@ public class Unit : MonoBehaviour
                 retarget = _retargetInterval;
             }
 
-            if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(stopDistance, _agent.radius))
+            if (_agent.pathPending == false && _agent.remainingDistance <= Mathf.Max(stopDistance, _agent.radius))
                 break;
 
             time += Time.deltaTime;
@@ -283,7 +281,6 @@ public class Unit : MonoBehaviour
         IsBusy = false;
         _state = UnitState.Idle;
 
-        _targetResource = null;
         _resourceT = null;
         _baseT = null;
 
@@ -311,31 +308,34 @@ public class Unit : MonoBehaviour
         
         if (_agent == null) return;
 
-        if (!_agent.isOnNavMesh)
+        if (_agent.isOnNavMesh == false)
         {
-            if (TrySnapToNavMesh(transform.position, 2f, out var snapped))
+            if (TrySnapToNavMesh(transform.position, 2f, out Vector3 snapped))
                 transform.position = snapped;
         }
     }
 
-    private bool TrySnapToNavMesh(Vector3 pos, float maxDistance, out Vector3 snapped)
+    private bool TrySnapToNavMesh(Vector3 position, float maxDistance, out Vector3 snapped)
     {
-        if (NavMesh.SamplePosition(pos, out var hit, maxDistance, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(position, out var hit, maxDistance, NavMesh.AllAreas))
         {
             snapped = hit.position;
             
             return true;
         }
-        snapped = pos;
+        
+        snapped = position;
         
         return false;
     }
 
     private void SafeSetDestination(Vector3 worldPos)
     {
+        float maxDistance = 2f;
+        
         if (_agent == null) return;
 
-        if (TrySnapToNavMesh(worldPos, 2f, out var snapped))
+        if (TrySnapToNavMesh(worldPos, maxDistance, out Vector3 snapped))
         {
             _agent.SetDestination(snapped);
         }        

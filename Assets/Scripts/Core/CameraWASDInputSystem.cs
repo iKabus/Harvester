@@ -6,7 +6,6 @@ public class CameraWASDInputSystem : MonoBehaviour
 {
     [SerializeField] private InputActionReference _move;
     [SerializeField] private InputActionReference _look;
-    [SerializeField] private InputActionReference _rotateHold;
 
     [SerializeField] private float _moveSpeed;
     [SerializeField] private bool _clampToBounds = false;
@@ -36,14 +35,12 @@ public class CameraWASDInputSystem : MonoBehaviour
     {
         Enable(_move);
         Enable(_look);
-        Enable(_rotateHold);
     }
 
     private void OnDisable()
     {
         Disable(_move);
         Disable(_look);
-        Disable(_rotateHold);
     }
 
     private void Update()
@@ -51,8 +48,7 @@ public class CameraWASDInputSystem : MonoBehaviour
         float deltaTime = Time.deltaTime;
         
         bool hold = _requireRightMouseToRotate == false ||
-                    (_rotateHold?.action?.IsPressed() ??
-                     (Mouse.current?.rightButton.isPressed ?? false));
+                     (Mouse.current?.rightButton.isPressed ?? false);
 
         if (hold)
         {

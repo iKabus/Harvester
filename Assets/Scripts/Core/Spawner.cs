@@ -18,7 +18,6 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     protected ObjectPool<T> _pool;
 
     public int ActiveCount => _pool != null ? _pool.CountActive : 0;
-    public int InactiveCount => _pool != null ? _pool.CountInactive : 0;
 
     protected virtual void Awake()
     {
@@ -116,7 +115,7 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
 
     protected virtual bool TrySpawn()
     {
-        var spawnPosition = TryGetPosition();
+        Vector3? spawnPosition = TryGetPosition();
 
         if (!spawnPosition.HasValue)
             return false;
@@ -137,11 +136,11 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
         if (_spawnPoints == null || _spawnPoints.Length == 0)
             return null;
 
-        var freePoints = _spawnPoints
-            .Where(p => p != null
-                        && p.isActiveAndEnabled
-                        && p.gameObject.activeInHierarchy
-                        && p.IsFree)
+        SpawnPoint[] freePoints = _spawnPoints
+            .Where(spawnPoint => spawnPoint != null
+                        && spawnPoint.isActiveAndEnabled
+                        && spawnPoint.gameObject.activeInHierarchy
+                        && spawnPoint.IsFree)
             .ToArray();
 
         if (freePoints.Length == 0)
@@ -152,19 +151,6 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
         int randomIndex = Random.Range(0, freePoints.Length);
 
         return freePoints[randomIndex].transform.position;
-    }
-
-    protected void ReleaseToPool(T item)
-    {
-        if (item == null) return;
-        if (_pool == null) return;
-
-        if (!item.gameObject.activeInHierarchy)
-        {
-            return;
-        }
-
-        _pool.Release(item);
     }
 
     protected abstract void InitializeItem(T item, Vector3 position);
