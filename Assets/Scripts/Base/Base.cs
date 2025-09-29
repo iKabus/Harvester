@@ -11,11 +11,11 @@ public class Base : MonoBehaviour
     [SerializeField] private int _maxAssignmentsPerTick = 3;
     [SerializeField] private bool _allowFarUnits = true;
     [SerializeField] private float _unitMaxDistanceFromBase = 60f;
-    
+
     public event Action ResourceDelivered;
 
     public int ResourceCount { private set; get; } = 0;
-    
+
     private Coroutine _assignLoop;
 
     private void OnEnable()
@@ -23,7 +23,7 @@ public class Base : MonoBehaviour
         if (_assignLoop == null)
             _assignLoop = StartCoroutine(AssignLoop());
     }
-    
+
     private void OnDisable()
     {
         if (_assignLoop != null)
@@ -36,7 +36,7 @@ public class Base : MonoBehaviour
     public void NotifyDelivered()
     {
         ResourceCount++;
-        
+
         ResourceDelivered?.Invoke();
     }
 
@@ -47,7 +47,7 @@ public class Base : MonoBehaviour
         while (enabled && _scanner != null)
         {
             TryAssignTasks();
-            
+
             yield return wait;
         }
     }
@@ -55,41 +55,67 @@ public class Base : MonoBehaviour
     private void TryAssignTasks()
     {
         int assigned = 0;
-        
+
         if (_scanner == null) return;
 
         IReadOnlyCollection<Unit> allUnits = _scanner.GetUnits();
-        
+
         if (allUnits == null || allUnits.Count == 0) return;
 
-        IEnumerable<Unit> freeUnits = allUnits.Where(unit =>
-            unit != null &&
-            unit.isActiveAndEnabled &&
-            !unit.IsBusy &&
-            (_allowFarUnits || Vector3.SqrMagnitude(unit.transform.position - transform.position) <= _unitMaxDistanceFromBase)
-        );
-
-        freeUnits = freeUnits
-            .OrderBy(unit => Vector3.SqrMagnitude(unit.transform.position - transform.position));
-
-        
-        foreach (var unit in freeUnits)
+        foreach (Unit unit in GetFreeUnitsOrderedByProximity(allUnits).Take(_maxAssignmentsPerTick))
         {
-            if (assigned >= _maxAssignmentsPerTick)
+            if (TryAssignUnitToResource(unit) == false)
                 break;
 
-            Resource resource = _scanner.GetResource();
-            
-            if (resource == null || !resource.gameObject.activeInHierarchy)
-                break;
-
-            bool started = unit.GoCollectResource(resource, this);
-            
-            if (started)
-            {
-                assigned++;
-            }
+            assigned++;
         }
+    }
+
+    private IEnumerable<Unit> GetFreeUnitsOrderedByProximity(IReadOnlyCollection<Unit> allUnits)
+    {
+        Vector3 basePosition = transform.position;
+
+        float maxSqrDist = _unitMaxDistanceFromBase * _unitMaxDistanceFromBase;
+
+        return allUnits
+            .Where(unit => IsUnitEligible(unit, basePosition, maxSqrDist))
+            .OrderBy(unit =>
+            {
+                Vector3 offset = unit.transform.position - basePosition;
+                return offset.sqrMagnitude;
+            });
+    }
+
+    private bool IsUnitEligible(Unit unit, Vector3 basePosition, float maxSqrDist)
+    {
+        if (unit == null || !unit.isActiveAndEnabled || unit.IsBusy)
+            return false;
+
+        if (_allowFarUnits) return true;
+
+        Vector3 offset = unit.transform.position - basePosition;
+
+        return offset.sqrMagnitude <= maxSqrDist;
+    }
+
+    private bool TryAssignUnitToResource(Unit unit)
+    {
+        Resource resource = GetNextAvailableResource();
+
+        if (resource == null) return false;
+
+        return unit.GoCollectResource(resource, this);
+    }
+
+    private Resource GetNextAvailableResource()
+    {
+        if (_scanner == null) return null;
+
+        Resource resource = _scanner.GetResource();
+
+        if (resource == null) return null;
+
+        return resource.gameObject.activeInHierarchy ? resource : null;
     }
 
     private void OnDrawGizmosSelected()
