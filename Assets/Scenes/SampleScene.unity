@@ -336,8 +336,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraWASDInputSystem
   _move: {fileID: 4264014058400006771, guid: eb787c40cbfe344779380d36fa390f6a, type: 3}
+<<<<<<< Updated upstream
   _look: {fileID: -5233626428878573111, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   _moveSpeed: 10
+=======
+  _look: {fileID: 2916729992779445662, guid: eb787c40cbfe344779380d36fa390f6a, type: 3}
+  _rotateHold: {fileID: -4843459947994926143, guid: eb787c40cbfe344779380d36fa390f6a, type: 3}
+  _moveSpeed: 5
+>>>>>>> Stashed changes
   _clampToBounds: 0
   _minXZ: {x: -100, y: -100}
   _maxXZ: {x: 100, y: 100}
