@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(Mover))]
 public class Unit : MonoBehaviour
 {
     [SerializeField] private float _moveSpeed = 3f;
@@ -17,6 +18,10 @@ public class Unit : MonoBehaviour
     [SerializeField] private Vector3 _carryLocalOffset = Vector3.zero;
 
     private NavMeshAgent _agent;
+    private Mover _mover;
+    private CarryHandler _carry;
+    private Collector _collector;
+
     private Vector3 _home;
     private bool _initialized;
 
@@ -24,6 +29,7 @@ public class Unit : MonoBehaviour
     private Transform _baseT;
 
     private Coroutine _runner;
+    
     public bool IsBusy { get; private set; }
 
     private UnitState _state = UnitState.Idle;
@@ -31,27 +37,16 @@ public class Unit : MonoBehaviour
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _mover = GetComponent<Mover>();
+        _carry = new CarryHandler();
+        _collector = new Collector();
     }
-
-    private void OnValidate()
-    {
-        float currentDistance = 0.01f;
-        
-        if (_baseArrivalDistance < currentDistance) _baseArrivalDistance = currentDistance;
-        
-        if (_agent != null) _agent.speed = _moveSpeed;
-    }
-
-    private void OnDisable() => StopRunner();
-    private void OnDestroy() => StopRunner();
 
     public void Init(Vector3 position)
     {
         float maxDistance = 2f;
         
-        if (_agent == null) _agent = GetComponent<NavMeshAgent>();
-
-        transform.position = TrySnapToNavMesh(position, maxDistance, out Vector3 snapped) ? snapped : position;
+        transform.position = NavMeshUtil.TrySnapToNavMesh(position, maxDistance, out var snapped) ? snapped : position;
 
         _agent.speed = _moveSpeed;
         _agent.acceleration = _moveSpeed;
@@ -60,6 +55,8 @@ public class Unit : MonoBehaviour
         _agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
         _agent.stoppingDistance = _baseArrivalDistance;
         _agent.isStopped = true;
+
+        _mover.Configure(_retargetInterval);
 
         _home = transform.position;
         _initialized = true;
@@ -73,214 +70,79 @@ public class Unit : MonoBehaviour
 
         _resourceT = resource.transform;
         _baseT = targetBase.transform;
-
         IsBusy = true;
-        
+
         StopRunner();
-        
         _runner = StartCoroutine(RunCollectionCycle());
-        
         return true;
     }
 
     private IEnumerator RunCollectionCycle()
     {
-        float time = 0f;
+        float value = 1.25f;
         
         _state = UnitState.MoveToResource;
 
         bool canceled = false;
-        
-        yield return MoveUntilReached(
-            getTargetPos: () => _resourceT ? _resourceT.position : transform.position,
-            stopDistance: _collectionRange,
-            timeout: _moveTimeoutToResource,
-            cancel: () =>
-            {
-                if (_resourceT == null)
-                {
-                    canceled = true; 
-                    
-                    return true; 
-                }
-                
-                return false;
-            });
+        yield return _mover.MoveUntilReached(
+            _collectionRange, _moveTimeoutToResource,
+            () => _resourceT ? _resourceT.position : transform.position,
+            () => _resourceT == null ? (canceled = true) : false
+        );
 
         if (canceled)
         {
             yield return ReturnHome();
-            
             yield break;
         }
 
         _state = UnitState.Collecting;
-        
-        while (time < _collectionTime)
-        {
-            float extra = 1.25f;
-            
-            float limitSqr = _collectionRange * _collectionRange * extra * extra;
-            
-            if (_resourceT == null)
-            {
-                yield return ReturnHome();
-                
-                yield break;
-            }
-            
-            if ((transform.position - _resourceT.position).sqrMagnitude > limitSqr)
-            {
-                _state = UnitState.MoveToResource;
-                
-                yield return MoveUntilReached(
-                    getTargetPos: () => _resourceT ? _resourceT.position : transform.position,
-                    stopDistance: _collectionRange,
-                    timeout: _moveTimeoutToResource,
-                    cancel: () => _resourceT == null
-                );
-                
-                _state = UnitState.Collecting;
-                
-                time = 0f;
-                
-                continue;
-            }
+        yield return _collector.CollectRoutine(
+            _collectionTime,
+            () => _resourceT == null,
+            () => _resourceT != null &&
+                  (transform.position - _resourceT.position).sqrMagnitude >
+                  _collectionRange * _collectionRange * value * value,
+            () => _mover.MoveUntilReached(
+                _collectionRange,
+                _moveTimeoutToResource,
+                () => _resourceT ? _resourceT.position : transform.position,
+                () => _resourceT == null)
+        );
 
-            time += Time.deltaTime;
-            yield return null;
-        }
-
-        SetCarried(true);
+        _carry.SetCarried(_resourceT, true, transform, _carryLocalOffset);
 
         _state = UnitState.Returning;
-
         bool baseMissing = false;
-        
-        yield return MoveUntilReached(
-            getTargetPos: () => _baseT ? _baseT.position : _home,
-            stopDistance: _baseArrivalDistance,
-            timeout: _moveTimeoutToBase,
-            cancel: () =>
-            {
-                if (_baseT == null)
-                {
-                    baseMissing = true;
-                    
-                    return true;
-                }
-                
-                return false;
-            });
+
+        yield return _mover.MoveUntilReached(_baseArrivalDistance, _moveTimeoutToBase,
+            () => _baseT ? _baseT.position : _home,
+            () => _baseT == null ? (baseMissing = true) : false);
 
         if (baseMissing && (transform.position - _home).sqrMagnitude > _baseArrivalDistance * _baseArrivalDistance)
         {
-            yield return MoveUntilReached(
-                getTargetPos: () => _home,
-                stopDistance: _baseArrivalDistance,
-                timeout: _moveTimeoutToBase
-            );
+            yield return _mover.MoveUntilReached(_baseArrivalDistance, _moveTimeoutToBase, () => _home);
         }
 
-        SetCarried(false);
+        _carry.SetCarried(_resourceT, false, transform, _carryLocalOffset);
 
         if ((transform.position - _home).sqrMagnitude > _baseArrivalDistance * _baseArrivalDistance)
-        {
             yield return ReturnHome();
-        }        
         else
-        {
             ResetUnit();
-        }    
     }
 
     private IEnumerator ReturnHome()
     {
         _state = UnitState.Returning;
-        
-        yield return MoveUntilReached(
-            getTargetPos: () => _home,
-            stopDistance: _baseArrivalDistance,
-            timeout: _moveTimeoutToBase
-        );
-        
+        yield return _mover.MoveUntilReached(_baseArrivalDistance, _moveTimeoutToBase, () => _home);
         ResetUnit();
-    }
-    
-    private IEnumerator MoveUntilReached(Func<Vector3> getTargetPos, float stopDistance, float timeout, Func<bool> cancel = null)
-    {
-        float time = 0f;
-        float retarget = 0f;
-        
-        EnsureAgentOnNav();
-        
-        if (_agent == null) yield break;
-
-        _agent.stoppingDistance = stopDistance;
-        _agent.isStopped = false;
-
-
-        while (enabled)
-        {
-            if (cancel != null && cancel()) break;
-
-            if (retarget <= 0f)
-            {
-                SafeSetDestination(getTargetPos());
-                
-                retarget = _retargetInterval;
-            }
-
-            if (_agent.pathPending == false && _agent.remainingDistance <= Mathf.Max(stopDistance, _agent.radius))
-                break;
-
-            time += Time.deltaTime;
-            retarget -= Time.deltaTime;
-
-            if (time >= timeout) break;
-            
-            yield return null;
-        }
-
-        _agent.isStopped = true;
-    }
-
-    private void SetCarried(bool carry)
-    {
-        if (_resourceT == null) return;
-
-        if (carry)
-        {
-            _resourceT.SetParent(transform, worldPositionStays: false);
-            _resourceT.localPosition = _carryLocalOffset;
-
-            if (_resourceT.TryGetComponent<Rigidbody>(out var rigidbody))
-            {
-                rigidbody.isKinematic = true;
-                rigidbody.detectCollisions = false;
-            }
-            if (_resourceT.TryGetComponent<Collider>(out var collider))
-                collider.isTrigger = true;
-        }
-        else
-        {
-            _resourceT.SetParent(null, worldPositionStays: true);
-
-            if (_resourceT.TryGetComponent<Rigidbody>(out var rigidbody))
-            {
-                rigidbody.isKinematic = false;
-                rigidbody.detectCollisions = true;
-            }
-            if (_resourceT.TryGetComponent<Collider>(out var collider))
-                collider.isTrigger = false;
-        }
     }
 
     private void ResetUnit()
     {
         IsBusy = false;
         _state = UnitState.Idle;
-
         _resourceT = null;
         _baseT = null;
 
@@ -288,7 +150,6 @@ public class Unit : MonoBehaviour
         {
             _agent.isStopped = true;
             _agent.velocity = Vector3.zero;
-            
             if (_agent.isOnNavMesh) _agent.ResetPath();
         }
     }
@@ -302,65 +163,19 @@ public class Unit : MonoBehaviour
         }
     }
 
-    private void EnsureAgentOnNav()
-    {
-        if (_agent == null) _agent = GetComponent<NavMeshAgent>();
-        
-        if (_agent == null) return;
-
-        if (_agent.isOnNavMesh == false)
-        {
-            if (TrySnapToNavMesh(transform.position, 2f, out Vector3 snapped))
-                transform.position = snapped;
-        }
-    }
-
-    private bool TrySnapToNavMesh(Vector3 position, float maxDistance, out Vector3 snapped)
-    {
-        if (NavMesh.SamplePosition(position, out var hit, maxDistance, NavMesh.AllAreas))
-        {
-            snapped = hit.position;
-            
-            return true;
-        }
-        
-        snapped = position;
-        
-        return false;
-    }
-
-    private void SafeSetDestination(Vector3 worldPos)
-    {
-        float maxDistance = 2f;
-        
-        if (_agent == null) return;
-
-        if (TrySnapToNavMesh(worldPos, maxDistance, out Vector3 snapped))
-        {
-            _agent.SetDestination(snapped);
-        }        
-        else
-        {
-            _agent.SetDestination(worldPos);
-        }    
-    }
-
     private void OnDrawGizmos()
     {
         if (!_initialized) return;
 
-        switch (_state)
+        if (_state == UnitState.MoveToResource && _resourceT)
         {
-            case UnitState.MoveToResource:
-                Gizmos.color = Color.yellow;
-                
-                if (_resourceT) Gizmos.DrawLine(transform.position, _resourceT.position);
-                break;
-            
-            case UnitState.Returning:
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(transform.position, _baseT ? _baseT.position : _home);
-                break;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, _resourceT.position);
+        }
+        else if (_state == UnitState.Returning)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(transform.position, _baseT ? _baseT.position : _home);
         }
     }
 }

@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 6767318603715482356}
   - component: {fileID: 6101886279760079097}
   - component: {fileID: -4315565998819366423}
-  - component: {fileID: 2910085573043688971}
   - component: {fileID: -2733634712675442626}
+  - component: {fileID: 2702124560640017125}
   m_Layer: 0
   m_Name: Unit
   m_TagString: Untagged
@@ -143,26 +143,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 116
   m_CollisionDetection: 0
---- !u!114 &2910085573043688971
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3351827498485491594}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14f9675a03da11e469cabec25d04f32b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Unit
-  _moveSpeed: 7
-  _retargetInterval: 0.15
-  _moveTimeoutToResource: 10
-  _moveTimeoutToBase: 15
-  _baseArrivalDistance: 2
-  _collectionRange: 2
-  _collectionTime: 1
-  _carryLocalOffset: {x: 0, y: 1.5, z: 0}
 --- !u!195 &-2733634712675442626
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -185,3 +165,23 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &2702124560640017125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3351827498485491594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14f9675a03da11e469cabec25d04f32b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unit
+  _moveSpeed: 10
+  _retargetInterval: 0.15
+  _moveTimeoutToResource: 10
+  _moveTimeoutToBase: 15
+  _baseArrivalDistance: 0.15
+  _collectionRange: 2
+  _collectionTime: 1
+  _carryLocalOffset: {x: 0, y: 1, z: 0}

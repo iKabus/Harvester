@@ -2,33 +2,11 @@ using UnityEngine;
 
 public abstract class SpawnPoint : MonoBehaviour
 {
-    public bool IsFree { get; protected set; } = true;
+    [SerializeField] private bool _isFree = true;
     
-    private void HandleTriggerEnter(Collider other)
-    {
-        IsFree = false;
-    }
+    public bool IsFree => _isFree;
+
+    public void SetOccupied() => _isFree = false;
     
-    private void HandleTriggerExit(Collider other)
-    {
-        IsFree = true;
-    }
-    
-    private void OnTriggerEnter(Collider other)
-    {
-        if (ShouldProcessCollision(other))
-        {
-            HandleTriggerEnter(other);
-        }
-    }
-    
-    private void OnTriggerExit(Collider other)
-    {
-        if (ShouldProcessCollision(other))
-        {
-            HandleTriggerExit(other);
-        }
-    }
-    
-    protected abstract bool ShouldProcessCollision(Collider other);
+    public void SetFree() => _isFree = true;
 }

@@ -7,7 +7,6 @@ public class UnitSpawner : Spawner<Unit>
     protected override void InitializeItem(Unit unit, Vector3 position)
     {
         unit.Init(position); 
-        SetupItemEvents(unit);
     }
 
     protected override bool TrySpawn()
