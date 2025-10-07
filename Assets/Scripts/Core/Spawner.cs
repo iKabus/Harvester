@@ -45,6 +45,39 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
         _pool = null;
     }
     
+    protected IEnumerator SpawnCooldown()
+    {
+        var wait = new WaitForSeconds(_repeatRate);
+
+        while (isActiveAndEnabled)
+        {
+            TrySpawn();
+
+            yield return wait;
+        }
+    }
+
+    protected virtual bool TrySpawn()
+    {
+        SpawnPoint point = TryGetFreeSpawnPoint();
+
+        if (point == null)
+            return false;
+
+        var item = _pool.Get();
+
+        if (item == null)
+            return false;
+
+        point.SetOccupied();
+        
+        _owners[item] = point;
+
+        InitializeItem(item, point.transform.position);
+        
+        return true;
+    }
+    
     private void InitializePool()
     {
         _pool = new ObjectPool<T>(
@@ -102,39 +135,6 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
             StopCoroutine(_coroutine);
             _coroutine = null;
         }
-    }
-
-    protected IEnumerator SpawnCooldown()
-    {
-        var wait = new WaitForSeconds(_repeatRate);
-
-        while (isActiveAndEnabled)
-        {
-            TrySpawn();
-
-            yield return wait;
-        }
-    }
-
-    protected virtual bool TrySpawn()
-    {
-        SpawnPoint point = TryGetFreeSpawnPoint();
-
-        if (point == null)
-            return false;
-
-        var item = _pool.Get();
-
-        if (item == null)
-            return false;
-
-        point.SetOccupied();
-        
-        _owners[item] = point;
-
-        InitializeItem(item, point.transform.position);
-        
-        return true;
     }
 
     private SpawnPoint TryGetFreeSpawnPoint()

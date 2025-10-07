@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -29,7 +28,8 @@ public class Unit : MonoBehaviour
     private Transform _baseT;
 
     private Coroutine _runner;
-    
+    private bool _abortCycle;
+
     public bool IsBusy { get; private set; }
 
     private UnitState _state = UnitState.Idle;
@@ -45,7 +45,7 @@ public class Unit : MonoBehaviour
     public void Init(Vector3 position)
     {
         float maxDistance = 2f;
-        
+
         transform.position = NavMeshUtil.TrySnapToNavMesh(position, maxDistance, out var snapped) ? snapped : position;
 
         _agent.speed = _moveSpeed;
@@ -66,26 +66,48 @@ public class Unit : MonoBehaviour
 
     public bool GoCollectResource(Resource resource, Base targetBase)
     {
-        if (resource == null || targetBase == null || IsBusy) return false;
+        if (resource == null || targetBase == null || IsBusy)
+            return false;
 
         _resourceT = resource.transform;
         _baseT = targetBase.transform;
         IsBusy = true;
 
         StopRunner();
+        
         _runner = StartCoroutine(RunCollectionCycle());
+        
         return true;
     }
 
     private IEnumerator RunCollectionCycle()
     {
-        float value = 1.25f;
+        _abortCycle = false;
+
+        yield return MoveToResource();
+        
+        if (_abortCycle) yield break;
+
+        yield return CollectResource();
+        
+        if (_abortCycle) yield break;
+
+        yield return ReturnToBase();
+        
+        if (_abortCycle) yield break;
+
+        FinalizeCollection();
+    }
+
+    private IEnumerator MoveToResource()
+    {
+        bool canceled = false;
         
         _state = UnitState.MoveToResource;
 
-        bool canceled = false;
         yield return _mover.MoveUntilReached(
-            _collectionRange, _moveTimeoutToResource,
+            _collectionRange,
+            _moveTimeoutToResource,
             () => _resourceT ? _resourceT.position : transform.position,
             () => _resourceT == null ? (canceled = true) : false
         );
@@ -93,31 +115,63 @@ public class Unit : MonoBehaviour
         if (canceled)
         {
             yield return ReturnHome();
+            
+            _abortCycle = true;
+        }
+    }
+
+    private IEnumerator CollectResource()
+    {
+        float buffer = _collectionRange * 1.25f;
+        
+        if (_resourceT == null)
+        {
+            yield return ReturnHome();
+         
+            _abortCycle = true;
+            
             yield break;
         }
 
         _state = UnitState.Collecting;
+        
         yield return _collector.CollectRoutine(
             _collectionTime,
             () => _resourceT == null,
             () => _resourceT != null &&
-                  (transform.position - _resourceT.position).sqrMagnitude >
-                  _collectionRange * _collectionRange * value * value,
+                  (transform.position - _resourceT.position).sqrMagnitude > buffer * buffer,
             () => _mover.MoveUntilReached(
                 _collectionRange,
                 _moveTimeoutToResource,
                 () => _resourceT ? _resourceT.position : transform.position,
-                () => _resourceT == null)
+                () => _resourceT == null
+            )
         );
 
+        if (_resourceT == null)
+        {
+            yield return ReturnHome();
+            
+            _abortCycle = true;
+            
+            yield break;
+        }
+
         _carry.SetCarried(_resourceT, true, transform, _carryLocalOffset);
+    }
 
-        _state = UnitState.Returning;
+    private IEnumerator ReturnToBase()
+    {
         bool baseMissing = false;
+        
+        _state = UnitState.Returning;
 
-        yield return _mover.MoveUntilReached(_baseArrivalDistance, _moveTimeoutToBase,
+        yield return _mover.MoveUntilReached(
+            _baseArrivalDistance,
+            _moveTimeoutToBase,
             () => _baseT ? _baseT.position : _home,
-            () => _baseT == null ? (baseMissing = true) : false);
+            () => _baseT == null ? (baseMissing = true) : false
+        );
 
         if (baseMissing && (transform.position - _home).sqrMagnitude > _baseArrivalDistance * _baseArrivalDistance)
         {
@@ -127,15 +181,21 @@ public class Unit : MonoBehaviour
         _carry.SetCarried(_resourceT, false, transform, _carryLocalOffset);
 
         if ((transform.position - _home).sqrMagnitude > _baseArrivalDistance * _baseArrivalDistance)
+        {
             yield return ReturnHome();
-        else
-            ResetUnit();
+            _abortCycle = true;
+        }
     }
 
     private IEnumerator ReturnHome()
     {
         _state = UnitState.Returning;
         yield return _mover.MoveUntilReached(_baseArrivalDistance, _moveTimeoutToBase, () => _home);
+        ResetUnit();
+    }
+
+    private void FinalizeCollection()
+    {
         ResetUnit();
     }
 
@@ -150,6 +210,7 @@ public class Unit : MonoBehaviour
         {
             _agent.isStopped = true;
             _agent.velocity = Vector3.zero;
+            
             if (_agent.isOnNavMesh) _agent.ResetPath();
         }
     }
